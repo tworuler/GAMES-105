@@ -77,6 +77,30 @@ def part2_forward_kinematics(joint_name, joint_parent, joint_offset, motion_data
     """
     joint_positions = None
     joint_orientations = None
+
+    joint_positions = []
+    joint_orientations = []
+    motion = motion_data[frame_id]
+    index = 0
+    for name, parent, offset in zip(joint_name, joint_parent, joint_offset):
+        if parent == -1:
+            position = motion[index:index + 3]
+            orientation = R.from_euler('XYZ', motion[index + 3:index + 6], degrees=True)
+            joint_positions.append(position)
+            joint_orientations.append(orientation)
+            index += 6
+        else:
+            position = joint_orientations[parent].as_matrix() @ offset + joint_positions[parent]
+            euler = motion[index : index + 3] if not name.endswith('End') else [0, 0, 0]
+            orientation = joint_orientations[parent] * R.from_euler('XYZ', euler, degrees=True)
+            joint_positions.append(position)
+            joint_orientations.append(orientation)
+            if not name.endswith('End'):
+                index += 3
+
+    joint_positions = np.array(joint_positions)
+    joint_orientations = np.array([r.as_quat() for r in joint_orientations])
+
     return joint_positions, joint_orientations
 
 
