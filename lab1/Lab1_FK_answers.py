@@ -18,6 +18,22 @@ def load_motion_data(bvh_file_path):
     return motion_data
 
 
+def parse_joint(lines, line_index, parent, joint_name, joint_parent, joint_offset):
+    index = len(joint_name)
+    joint_type, name = lines[line_index].strip().split()
+    if joint_type == 'ROOT':
+        name = 'RootJoint'
+    elif joint_type == 'End':
+        name = joint_name[parent] + 'End'
+    joint_name.append(name)
+    joint_parent.append(parent)
+    joint_offset.append([float(x) for x in lines[line_index + 2].strip().split()[1:]])
+    line_count = 3 if joint_type == "End" else 4
+    while lines[line_index + line_count].strip() != '}':
+        new_line_count = parse_joint(lines, line_index + line_count, index, joint_name, joint_parent, joint_offset)
+        line_count += new_line_count + 1
+    return line_count
+
 
 def part1_calculate_T_pose(bvh_file_path):
     """请填写以下内容
@@ -33,6 +49,17 @@ def part1_calculate_T_pose(bvh_file_path):
     joint_name = None
     joint_parent = None
     joint_offset = None
+
+    lines = []
+    with open(bvh_file_path, 'r') as f:
+        lines = f.readlines()
+
+    joint_name = []
+    joint_parent = []
+    joint_offset = []
+    parse_joint(lines, 1, -1, joint_name, joint_parent, joint_offset)
+    joint_offset = np.array(joint_offset)
+
     return joint_name, joint_parent, joint_offset
 
 
