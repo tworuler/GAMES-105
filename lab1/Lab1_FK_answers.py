@@ -115,4 +115,31 @@ def part3_retarget_func(T_pose_bvh_path, A_pose_bvh_path):
         as_euler时也需要大写的XYZ
     """
     motion_data = None
+    A_motion_data = load_motion_data(A_pose_bvh_path)
+    T_joint_name, _, _ = part1_calculate_T_pose(T_pose_bvh_path)
+    A_joint_name, _, _ = part1_calculate_T_pose(A_pose_bvh_path)
+    A_name_index = {}
+    index = 0
+    for name in A_joint_name:
+        if not name.endswith('End'):
+            A_name_index[name] = index
+            index += 1
+    motion_data = [[] for _ in range(len(A_motion_data))]
+    for i in range(len(T_joint_name)):
+        name = T_joint_name[i]
+        if name.endswith('End'):
+            continue
+        if i == 0:
+            for j in range(len(motion_data)):
+                motion_data[j] += list(A_motion_data[j][A_name_index[name] * 3 : A_name_index[name] * 3 + 6])
+        else:
+            for j in range(len(motion_data)):
+                motion_data[j] += list(A_motion_data[j][A_name_index[name] * 3 + 3 : A_name_index[name] * 3 + 6])
+        if name == 'lShoulder':
+            for motion in motion_data:
+                motion[-1] -= 45
+        elif name == 'rShoulder':
+            for motion in motion_data:
+                motion[-1] += 45
+    motion_data = np.array(motion_data)
     return motion_data
